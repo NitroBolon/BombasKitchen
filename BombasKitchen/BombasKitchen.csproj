@@ -68,6 +68,7 @@
 	
 	<ItemGroup>
 	  <PackageReference Include="AntDesign.ProLayout" Version="0.1.10" />
+	  <PackageReference Include="AutoMapper" Version="11.0.0" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	  <PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
 	  <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.7" />

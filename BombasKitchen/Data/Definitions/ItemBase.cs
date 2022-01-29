@@ -1,13 +1,13 @@
-﻿namespace BombasKitchen.Data.Definitions
+﻿using SQLite;
+using System.ComponentModel;
+
+namespace BombasKitchen.Data.Definitions
 {
     public class ItemBase
     {
-        public string Id { get; set; }
+        [PrimaryKey, AutoIncrement]
+        public int Id { get; set; }
+        [DisplayName("Name")]
         public string Name { get; set; }
-
-        public ItemBase()
-        {
-            Id = Guid.NewGuid().ToString();
-        }
     }
 }

@@ -2,8 +2,8 @@
 {
     public enum UnitTypes
     {
-        Item = 0,
-        MassG = 1,
-        MassKg = 2
+        pcs = 0,
+        g = 1,
+        kg = 2
     }
 }

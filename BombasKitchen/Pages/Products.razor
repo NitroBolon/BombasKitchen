@@ -1,0 +1,165 @@
+﻿@page "/products"
+@using AntDesign.TableModels
+@using BombasKitchen.Data.Definitions
+@using System.ComponentModel
+@using AntDesign
+@using BombasKitchen.Enums
+@using AutoMapper
+
+<h1>Products</h1>
+
+<Button Type="@ButtonType.Primary" OnClick="addNew" Style="margin-bottom: 1rem;">Add new product</Button>
+
+<Table DataSource="listOfData.OrderByDescending(i => i.Id)" PageSize="5" TItem="Product" RowClassName="@(_=>"editable-row")" Bordered TableLayout="fixed">
+    <ChildContent Context="data">
+        <Column TData="string" Title="Name">
+            @if (!editCache[data.Id].edit)
+            {
+                @data.Name
+            }
+            else
+            {
+                <Input @bind-Value="editCache[data.Id].data.Name" />
+            }
+        </Column>
+        <Column TData="string" Title="Amount">
+            @if (!editCache[data.Id].edit)
+            {
+                @data.Amount
+            }
+            else
+            {
+                <Input @bind-Value="editCache[data.Id].data.Amount" />
+            }
+        </Column>
+        <Column TData="string" Title="Unit">
+            @if (!editCache[data.Id].edit)
+            {
+                @data.Unit
+            }
+            else
+            {
+                <Select DataSource="@_units"
+                    @bind-Value="editCache[data.Id].data.Unit"
+                    LabelName="@nameof(Unit.Name)"
+                    ValueName="@nameof(Unit.Value)"
+                    Placeholder="Select a person"
+                    DefaultActiveFirstItem="false">
+                </Select>
+            }
+        </Column>
+        <ActionColumn Title="Action">
+            @if (!editCache[data.Id].edit)
+            {
+
+                <a @onclick="() => startEdit(data.Id)"><Button Type="@ButtonType.Primary">Edit</Button></a>
+                <Popconfirm Title="Sure to delete?"
+                        OnConfirm="() => delete(data.Id)"
+                        OkText="Yes"
+                        CancelText="No">
+                    <a><Button Danger Type="@ButtonType.Dashed">Delete</Button></a>
+                </Popconfirm>
+            }
+            else
+            {
+                <a @onclick="() => saveEdit(data.Id)" class="save">Save</a>
+                <Popconfirm Title="Sure to cancel?"
+                        OnConfirm="() => cancelEdit(data.Id)"
+                        OkText="Yes"
+                        CancelText="No">
+                    <a>Cancel</a>
+                </Popconfirm>
+            }
+        </ActionColumn>
+    </ChildContent>
+</Table>
+
+<style>
+    .save {
+        margin-right: 8px;
+    }
+</style>
+
+@code {
+
+    record Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int Amount { get; set; }
+        public UnitTypes Unit { get; set; }
+    };
+
+    IDictionary<int, (bool edit, Product data)> editCache = new Dictionary<int, (bool edit, Product data)>();
+    List<Product> listOfData = new();
+
+    int i = 0;
+    int editId;
+    public class Unit
+    {
+        public UnitTypes Value { get; set; }
+        public string Name { get; set; }
+    }
+    List<Unit> _units;
+
+    async Task addNew()
+    {
+        Data.Definitions.Product prod = new Data.Definitions.Product();
+        var id = await App.Database.AddProduct(prod);
+
+        var product = new Product { Id = id, Name = prod.Name, Amount = prod.Amount, Unit = prod.Unit };
+        listOfData.Add(product);
+        editCache[id] = (true, product);
+    }
+
+    void startEdit(int id)
+    {
+        var data = editCache[id];
+        editCache[id] = (true, data.data with { });
+    }
+
+    void cancelEdit(int id)
+    {
+        var data = listOfData.FirstOrDefault(item => item.Id == id);
+        editCache[id] = (false, data);
+    }
+
+    async Task saveEdit(int id)
+    {
+        var index = listOfData.FindIndex(item => item.Id == id);
+        listOfData[index] = editCache[id].data;
+        editCache[id] = (false, listOfData[index]);
+
+        var config = new MapperConfiguration(cfg => cfg.CreateMap<Product, Data.Definitions.Product>());
+        var mapper = config.CreateMapper();
+        await App.Database.UpdateProduct(mapper.Map<Data.Definitions.Product>(listOfData[index]));
+    }
+
+    async Task delete(int id)
+    {
+        var index = listOfData.FindIndex(item => item.Id == id);
+
+        var config = new MapperConfiguration(cfg => cfg.CreateMap<Product, Data.Definitions.Product>());
+        var mapper = config.CreateMapper();
+        await App.Database.RemoveProduct(mapper.Map<Data.Definitions.Product>(listOfData[index]));
+        
+        //editCache = editCache.Where(i => i.Key != id).ToDictionary(v => v.Key, v => v.Value);
+        listOfData = listOfData.Where(i => i.Id != id).ToList();
+    }
+
+    protected override void OnInitialized()
+    {
+        listOfData = App.Database.GetProducts().Result.Select(i => new Product { Id = i.Id, Name = i.Name, Amount = i.Amount, Unit = i.Unit }).ToList();
+        listOfData.ForEach(item =>
+        {
+            editCache[item.Id] = (false, item);
+        });
+
+        _units = new List<Unit>
+        {
+            new Unit { Value = UnitTypes.pcs, Name = "pcs" },
+            new Unit { Value = UnitTypes.g, Name = "g" },
+            new Unit { Value = UnitTypes.kg , Name = "kg" }
+        };
+    }
+}

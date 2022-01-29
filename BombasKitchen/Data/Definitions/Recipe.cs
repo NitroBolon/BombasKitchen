@@ -7,7 +7,6 @@
 
         public Recipe()
         {
-            Id = Guid.NewGuid().ToString();
             Products = new List<Product>();
         }
     }

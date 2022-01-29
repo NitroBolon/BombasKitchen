@@ -6,7 +6,6 @@
 
         public Day()
         {
-            Id = Guid.NewGuid().ToString();
             Recipes = new List<Recipe>();
         }
     }
