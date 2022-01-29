@@ -1,7 +1,13 @@
 ﻿@page "/"
+@using AntDesign
+@using BombasKitchen.Data.Middleware
+@inject ProductsProcessor _productsProcessor
 
-<h1>Hello, world!</h1>
+<h1>Bombas Kitchen</h1>
 
-Welcome to your new app.
+<Button Type="@ButtonType.Primary" OnClick="test">Test</Button>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code
+{
+    public void test() => _productsProcessor.GetAllProducts();
+}

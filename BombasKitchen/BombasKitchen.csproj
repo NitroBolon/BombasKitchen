@@ -15,7 +15,7 @@
 		<ApplicationTitle>BombasKitchen</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.bombaskitchen</ApplicationId>
+		<ApplicationId>com.janekm.bombaskitchen</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationVersion>1</ApplicationVersion>
@@ -32,14 +32,15 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon
-			Include="Resources\appicon.svg"
-			ForegroundFile="Resources\appiconfg.svg"
-			Color="#512BD4" />
-
+		<MauiIcon Include="Resources\kitchenicon.png" ForegroundFile="Resources\appiconfg.svg" IsAppIcon="true" Color="#fff">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</MauiIcon>
+		
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\appiconfg.svg" Color="#512BD4" />
-
+		<MauiSplashScreen Include="Resources\kitchensplash.svg" Color="#fff">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</MauiSplashScreen>
+		
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
 
@@ -59,7 +60,25 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Content Remove="Data\days.json" />
+		<Content Remove="Data\products.json" />
+		<Content Remove="Data\recipes.json" />
 		<Content Remove="Properties\launchSettings.json" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <PackageReference Include="AntDesign.ProLayout" Version="0.1.10" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	  <PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
+	  <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.7" />
+	  <PackageReference Include="SQLitePCLRaw.core" Version="2.0.7" />
+	  <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.0.7" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Resource Include="Data\days.json" />
+	  <Resource Include="Data\products.json" />
+	  <Resource Include="Data\recipes.json" />
 	</ItemGroup>
 
 </Project>

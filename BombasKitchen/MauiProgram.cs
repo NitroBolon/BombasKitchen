@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.WebView.Maui;
-using BombasKitchen.Data;
+using BombasKitchen.Services;
+using BombasKitchen.Data.Middleware;
 
 namespace BombasKitchen;
 
@@ -17,7 +18,9 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddBlazorWebView();
-		builder.Services.AddSingleton<WeatherForecastService>();
+		builder.Services.AddScoped<DataService>();
+		builder.Services.AddScoped<ProductsProcessor>();
+		builder.Services.AddAntDesign();
 
 		return builder.Build();
 	}
