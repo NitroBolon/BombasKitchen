@@ -20,7 +20,7 @@ public partial class App : Application
 
     public static void RunMigrations()
     {
-        //database.ClearTableProduct();
+        
     }
 
     public App()

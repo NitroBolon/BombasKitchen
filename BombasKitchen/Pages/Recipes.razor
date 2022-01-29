@@ -2,13 +2,178 @@
 
 @using BombasKitchen.Data
 
-<h1>Weather forecast</h1>
+<h1>Recipes</h1>
 
-<p>This component demonstrates fetching data from a service.</p>
+<Button Type="@ButtonType.Primary" OnClick="addNew" Style="margin-bottom: 1rem;">Add new recipe</Button>
+
+<Table DataSource="listOfData.OrderByDescending(i => i.Id)" PageSize="5" TItem="Recipe" RowClassName="@(_=>"editable-row")" Bordered TableLayout="fixed">
+    <ChildContent Context="data">
+        <Column TData="string" Title="Name">
+            @if (!editCache[data.Id].edit)
+            {
+                @data.Name
+            }
+            else
+            {
+                <Input @bind-Value="editCache[data.Id].data.Name" />
+            }
+        </Column>
+        <Column TData="string" Title="Description">
+            @if (!editCache[data.Id].edit)
+            {
+                @data.Description
+            }
+            else
+            {
+                <TextArea Rows="4" @bind-Value="editCache[data.Id].data.Description" />
+            }
+        </Column>
+        <Column TData="List<KeyValuePair<int, Product>>" Title="Products">
+            <span>
+                @if (!editCache[data.Id].edit)
+                {
+                    foreach (var item in data.Products)
+                    {
+                        <span>@item.product.Name : @item.product.Amount<span>@item.product.Unit</span> x @item.amount</span>
+                        <br />
+                    }
+                }
+                else
+                {
+                    foreach (var item in data.Products)
+                    {
+                        <Select DataSource="@listOfProducts"
+                        @bind-Value="@item.product"
+                        LabelName="@nameof(Joiner.product.Name)"
+                        Placeholder="Select product">
+                        </Select>
+                        <AntDesign.InputNumber Min="1" DefaultValue="10" @bind-Value="@item.amount" />
+
+                        <br />
+                    }
+                    <br />
+                    <a @onclick="() => addNewProduct(data.Id)"><Button Type="@ButtonType.Primary" Style="margin-bottom: 1rem;">Add product</Button></a>
+                }
+            </span>
+        </Column>
+        <ActionColumn Title="Action">
+            @if (!editCache[data.Id].edit)
+            {
+
+                <a @onclick="() => startEdit(data.Id)"><Button Type="@ButtonType.Primary">Edit</Button></a>
+                <Popconfirm Title="Sure to delete?"
+                        OnConfirm="() => delete(data.Id)"
+                        OkText="Yes"
+                        CancelText="No">
+                    <a><Button Danger Type="@ButtonType.Dashed">Delete</Button></a>
+                </Popconfirm>
+            }
+            else
+            {
+                <a @onclick="() => saveEdit(data.Id)" class="save">Save</a>
+                <Popconfirm Title="Sure to cancel?"
+                        OnConfirm="() => cancelEdit(data.Id)"
+                        OkText="Yes"
+                        CancelText="No">
+                    <a>Cancel</a>
+                </Popconfirm>
+            }
+        </ActionColumn>
+    </ChildContent>
+</Table>
+
+<style>
+    .save {
+        margin-right: 8px;
+    }
+</style>
+
 
 @code {
+    record Recipe
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public List<Joiner> Products { get; set; }
+    };
 
-	protected override async Task OnInitializedAsync()
-	{
-	}
+    IDictionary<int, (bool edit, Recipe data)> editCache = new Dictionary<int, (bool edit, Recipe data)>();
+    List<Recipe> listOfData = new();
+    List<Product> listOfProducts = new();
+
+    int i = 0;
+    int editId;
+
+    async Task addNew()
+    {
+        Data.Definitions.Recipe prod = new Data.Definitions.Recipe();
+        var id = await App.Database.AddRecipe(prod, new List<Tuple<int, int>>());
+
+        var product = new Recipe { Id = id, Name = prod.Name, Description = prod.Description, Products = new List<Joiner>() };
+        listOfData.Add(product);
+        editCache[id] = (true, product);
+    }
+
+    void addNewProduct(int id)
+    {
+        var index = listOfData.FindIndex(item => item.Id == id);
+        listOfData[index].Products.Add(new Joiner());
+    }
+
+    void startEdit(int id)
+    {
+        var data = editCache[id];
+        editCache[id] = (true, data.data with { });
+    }
+
+    void cancelEdit(int id)
+    {
+        var data = listOfData.FirstOrDefault(item => item.Id == id);
+        editCache[id] = (false, data);
+    }
+
+    async Task saveEdit(int id)
+    {
+        var index = listOfData.FindIndex(item => item.Id == id);
+        listOfData[index] = editCache[id].data;
+        editCache[id] = (false, listOfData[index]);
+
+        var config = new MapperConfiguration(cfg => cfg.CreateMap<Recipe, Data.Definitions.Recipe>());
+        var mapper = config.CreateMapper();
+        await App.Database.UpdateRecipeProduct(mapper.Map<Data.Definitions.Recipe>(listOfData[index]), listOfData[index].Products);
+    }
+
+    async Task delete(int id)
+    {
+        var index = listOfData.FindIndex(item => item.Id == id);
+
+        var config = new MapperConfiguration(cfg => cfg.CreateMap<Recipe, Data.Definitions.Recipe>());
+        var mapper = config.CreateMapper();
+        await App.Database.RemoveRecipe(mapper.Map<Data.Definitions.Recipe>(listOfData[index]));
+
+        listOfData = listOfData.Where(i => i.Id != id).ToList();
+    }
+
+    protected override void OnInitialized()
+    {
+        var listOfCompositions = App.Database.GetRecipeProducts().Result;
+        listOfProducts = App.Database.GetProducts().Result;
+        var listOfRecipes = App.Database.GetRecipes().Result;
+
+        listOfData = App.Database.GetRecipes().Result
+        .Select(i => new Recipe
+            {
+                Id = i.Id,
+                Name = i.Name,
+                Description = i.Description,
+                Products = listOfCompositions.Where(c => c.RecipeId == i.Id)
+                .Select(cc => new Joiner { amount = cc.Amount, product = listOfProducts.First(x => x.Id == cc.ProductId) }).ToList()
+            }).ToList();
+
+        listOfData.ForEach(item =>
+        {
+            editCache[item.Id] = (false, item);
+        });
+    }
 }
